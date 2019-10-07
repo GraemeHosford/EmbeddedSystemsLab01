@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1569434483 source:c:\users\graeme\documents\c projects\embeddedsystemlab01\tree.c
+	<stdio.h>
+	<string.h>
+
