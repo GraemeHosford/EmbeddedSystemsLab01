@@ -1,4 +1,3 @@
-
 /*
     C socket server example, handles multiple clients using threads
 */
@@ -12,11 +11,32 @@
 #include<unistd.h>    //write
 #include<pthread.h> //for threading , link with lpthread
 
-
-
 //the thread function
 void *connection_handler(void *);
 
+struct State {
+  unsigned long Out;
+  unsigned long Time; 
+  unsigned long Next[4];
+};
+
+typedef const struct State STyp;
+
+#define goN   0
+#define waitN 1
+#define goE   2
+#define waitE 3
+
+STyp FSM[4]={
+ {0x21,3000,{goN,waitN,goN,waitN}},
+ {0x22, 500,{goE,goE,goE,goE}},
+ {0x0C,3000,{goE,goE,waitE,waitE}},
+ {0x14, 500,{goN,goN,goN,goN}}
+};
+
+unsigned long S;  // index to the current state
+
+unsigned long Input; 
 
 int main(int argc , char *argv[])
 {
@@ -75,12 +95,6 @@ int main(int argc , char *argv[])
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
 
-
-    //Accept and incoming connection
-    puts("Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
-
-
     while(1 ){
 
 
@@ -125,21 +139,35 @@ void *connection_handler(void *socket_desc)
     char *message;
 
     //Send some messages to the client
-    message = "Greetings! I am your connection handler\n";
+    strcpy(message, "Greetings! I am your connection handler\n");
 
     write(sock , message , strlen(message));
 
-    message = "Now type something and i shall repeat what you type \n";
+    strcpy(message, "Now type something and i shall repeat what you type \n");
 
     write(sock , message , strlen(message));
 
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
     {
-printf("received %s\n",client_message);
+        if (strcmp(client_message, "E") == 0) {
+            if(S == goE) {
+                strcpy(message, "Lights for east are already green\n");        
+            } else {
+                S = goE;
+                strcpy(message, "The lights for east are now green\n");
+            }
+        } else if (strcmp(client_message, "N") == 0) {
+            if(S == goN) {
+                strcpy(message, "Lights for north are already green\n");        
+            } else {
+                S = goN;
+                strcpy(message, "The lights for north are now green\n");
+            }
+        } 
 
         //Send the message back to client
-        write(sock , client_message , strlen(client_message));
+        write(sock , message , strlen(message));
     }
 
     if(read_size == 0)
