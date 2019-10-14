@@ -28,10 +28,10 @@ typedef const struct State STyp;
 #define waitE 3
 
 STyp FSM[4]={
- {0x21,3000,{goN,waitN,goN,waitN}},
- {0x22, 500,{goE,goE,goE,goE}},
- {0x0C,3000,{goE,goE,waitE,waitE}},
- {0x14, 500,{goN,goN,goN,goN}}
+ {0x21,3,{goN,waitN,goN,waitN}},
+ {0x22, 1,{goE,goE,goE,goE}},
+ {0x0C,3,{goE,goE,waitE,waitE}},
+ {0x14, 5,{goN,goN,goN,goN}}
 };
 
 unsigned long S;  // index to the current state
@@ -142,29 +142,34 @@ void *connection_handler(void *socket_desc)
     strcpy(message, "Greetings! I am your connection handler\n");
 
     write(sock , message , strlen(message));
-
-    strcpy(message, "Now type something and i shall repeat what you type \n");
-
-    write(sock , message , strlen(message));
-
+    S = goN;
     //Receive a message from client
-    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
+    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0)
     {
-        if (strcmp(client_message, "E") == 0) {
-            if(S == goE) {
-                strcpy(message, "Lights for east are already green\n");        
-            } else {
-                S = goE;
-                strcpy(message, "The lights for east are now green\n");
-            }
-        } else if (strcmp(client_message, "N") == 0) {
-            if(S == goN) {
-                strcpy(message, "Lights for north are already green\n");        
-            } else {
-                S = goN;
-                strcpy(message, "The lights for north are now green\n");
-            }
-        } 
+
+        sleep(FSM[S].Time);
+        
+        if(strcmp(client_message, "N") == 0) {
+            Input = 2;
+        } else if (strcmp(client_message, "E") == 0) {
+            Input = 1;
+        } else if (strcmp(client_message, "U") == 0) {
+            Input = 3;
+        } else {
+            Input = 0;
+        }
+
+        S = FSM[S].Next[Input];
+
+        if (S == 0) {
+            strcpy(message, "North is green. East is red\n");
+        } else if (S == 1) {
+            strcpy(message, "North is yellow. East is red\n");
+        } else if (S == 2) {
+            strcpy(message, "North is red. East is green\n");
+        } else if (S == 3) {
+            strcpy(message, "North is red. East is yellow\n");
+        }
 
         //Send the message back to client
         write(sock , message , strlen(message));
