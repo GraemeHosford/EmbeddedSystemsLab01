@@ -108,14 +108,7 @@ int ch;
     light = FSM[S].Out;
     if (change){
        // TODO output lights value
-       if (light & 1)
-          print_uart0("North Green");
-    change =0;
-    
-    //-----------------TEST--------------
-    
-    // select output based on current state 
-	switch (S)
+       switch (S)
 	{
 	    case 0: 
 			strcpy(outputMessage, "North lights are green"); // GoN - 33
@@ -132,13 +125,14 @@ int ch;
 	    default: 
 		    strcpy(outputMessage, "Something went wrong");
 	}
-
-	printf("outputMessage %s\n ",outputMessage);
-
-    //Send the message back to client
-    write(sock , outputMessage , strlen(outputMessage));
-
-	memset(client_message, 0, read_size);
+    
+    print_uart0(outputMessage);
+    change =0;
+    
+    //-----------------TEST--------------
+    
+    // select output based on current state 
+	
     
     //-----------------------------------
     }
@@ -153,13 +147,15 @@ int ch;
       //----------------TEST--------------
        ch = UART0->DR;
       // Change client message into Input
-	if(*ch == 'E'){		//East 
+	if(ch == 'E'){		//East 
 		Input = 1; 
-	} else if (*ch == 'N'){     //North 
-		Input = 0; 
-	} else {
+	} else if (ch == 'N'){     //North 
+		Input = 2; 
+	} else if (ch == 'U') {
 		Input = 3; 		        //Both  
-	}
+	} else {
+        Input = 0;
+    }
       
       //----------------------------------
       
